@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<head>
+	
+	<title>Basic Jupyter Notebook Python Auto Marking</title>    
+	<link rel="stylesheet" href="https://pyscript.net/releases/2025.11.1/core.css" />
+	<script type="module" src="https://pyscript.net/releases/2025.11.1/core.js"></script>
+	<script type="py">
+import js
+import json
+import sys
+import io
+from contextlib import redirect_stdout
+from pyscript import ffi
+
+def my_python_function(json_string):
+	data = json.loads(json_string)
+	
+	code = data["code"]
+	inputs = data["inputs"]
+	outputs = data["outputs"]
+	message = "";
+	for i in range(len(inputs)):
+		# Define the values you want input() to "receive"
+		sys.stdin = io.StringIO(inputs[i])
+		# Create a buffer to hold the output
+		f = io.StringIO()
+		with redirect_stdout(f):
+			exec(code)
+		# Get the contents from the buffer
+		captured_string = f.getvalue()
+		if captured_string.endswith(outputs[i]):
+			message +="Test "+str(i+1)+" passed.\n"
+		else:
+			message +="Test "+str(i+1)+" failed.\n"
+	
+	return message
+	
+# Create a proxy and attach it to the JS window
+js.window.callPython = ffi.create_proxy(my_python_function)
+	</script>
+	
+	<script>
+		//global variables for py-script
+		let code = "";
+		let inputs = new Array();
+		let outputs = new Array();
+		
+		function parseNotebook(notebook)
+		{
+			let cells = notebook.cells;
+			let problem = "";
+			
+			for(cell of cells)
+			{
+				const type = cell["cell_type"]; 
+				if (type=="markdown")
+				{
+					lines = cell["source"];
+					let current = 0;
+					while (current<lines.length)
+					{
+						let line = lines[current];
+						if (line=="## Sample input\n")
+						{
+							//console.log("read input");
+							//next line should be ```
+							current +=2;
+							let s = "";
+							while(lines[current]!="```\n")
+							{
+								s += lines[current];
+								current++;
+							}
+							inputs.push(s);
+							
+						}
+						else if (line=="## Sample output\n")
+						{
+							//console.log("read output");							
+							//next line should be ```
+							current +=2;
+							let s = "";
+							while(lines[current]!="```\n")
+							{
+								s += lines[current];
+								current++;
+							}
+							outputs.push(s);
+						}
+						else
+						{
+							current++;
+						}
+					}
+				}
+				else if (type=="code")
+				{
+					let s = "";
+					let lines = cell["source"];
+					for(line of lines)
+					{
+						s = s+line;
+					}
+					code = s;
+				}
+			}
+			//console.log(code);
+			//console.log(inputs);
+			//console.log(outputs);
+			return {code:code, inputs:inputs, outputs:outputs};
+		}
+		
+		function mark(jsonStr)
+		{
+			try
+			{
+				let message = window.callPython(jsonStr);
+				div = document.getElementById("message");
+				div.replaceChildren();//clear all
+				{
+					let p = document.createElement("p");
+					div.appendChild(p);
+					p.setAttribute("style","font-weight: bold;");
+					p.textContent = "Results";
+				}
+				{
+					let p = document.createElement("pre");
+					div.appendChild(p);
+					p.textContent = message;
+				}
+			}
+			catch(error)
+			{
+				div = document.getElementById("message");
+				div.replaceChildren();//clear all
+				{
+					let p = document.createElement("p");
+					div.appendChild(p);
+					p.setAttribute("style","color:red;font-weight: bold;");
+					p.textContent = "Error";
+				}
+				{
+					let p = document.createElement("pre");
+					div.appendChild(p);
+					p.setAttribute("style","color:red;");
+					p.textContent = error.message;
+				}
+			}
+		}
+		
+	</script>
+</head>
+<html lang="en">
+	<body>
+		<p>Load your Jupyter notebook
+		<input type="file" id="fileInput">
+		<script>
+			document.getElementById('fileInput').addEventListener('change', function(event)
+			{
+				const file = event.target.files[0];
+				if (!file)
+				{
+					return;
+				}
+				else
+				{
+					const reader = new FileReader();
+					reader.onload = function(e)
+					{
+						//console.log(htmlString);
+						const notebook = JSON.parse(e.target.result);
+						result = parseNotebook(notebook);
+						const jsonString = JSON.stringify(result);
+						mark(jsonString);
+					}
+					reader.readAsText(file); 
+				}
+			});
+		</script>		
+		<div id="message" style="white-space: pre-wrap;"/>
+	</body>
+</html>
