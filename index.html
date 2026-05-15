@@ -5,6 +5,8 @@
 	<title>Basic Jupyter Notebook Python Auto Marking</title>    
 	<link rel="stylesheet" href="https://pyscript.net/releases/2025.11.1/core.css" />
 	<script type="module" src="https://pyscript.net/releases/2025.11.1/core.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
 	<script type="py">
 import js
 import json
@@ -41,14 +43,15 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 	</script>
 	
 	<script>
-		//global variables for py-script
-		let code = "";
-		let inputs = new Array();
-		let outputs = new Array();
+		
+		
 		
 		function parseNotebook(notebook)
 		{
 			let cells = notebook.cells;
+			let code = "";
+			let inputs = new Array();
+			let outputs = new Array();
 			let problem = "";
 			
 			for(cell of cells)
@@ -57,6 +60,15 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 				if (type=="markdown")
 				{
 					lines = cell["source"];
+					//save the cell markdown
+					{
+						s = "";
+						for(line of lines)
+						{
+							s += line;
+						}
+						problem = s;
+					}
 					let current = 0;
 					while (current<lines.length)
 					{
@@ -108,7 +120,7 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 			//console.log(code);
 			//console.log(inputs);
 			//console.log(outputs);
-			return {code:code, inputs:inputs, outputs:outputs};
+			return {code:code, inputs:inputs, outputs:outputs,problem:problem};
 		}
 		
 		function mark(jsonStr)
@@ -171,13 +183,25 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 						//console.log(htmlString);
 						const notebook = JSON.parse(e.target.result);
 						result = parseNotebook(notebook);
+						console.log(result);
+						document.getElementById('problem').innerHTML = marked.parse(result.problem);
+						
 						const jsonString = JSON.stringify(result);
 						mark(jsonString);
+						MathJax.typesetPromise().then(() => {MathJax.typeset();});
+						
 					}
 					reader.readAsText(file); 
+					
+					/*MathJax.startup.promise.then(() =>
+					{
+						
+						return MathJax.typesetPromise();
+					}).catch((err) => console.log('Typeset failed: ', err.message));*/
 				}
 			});
-		</script>		
-		<div id="message" style="white-space: pre-wrap;"/>
+		</script>
+		<div id="problem"></div>
+		<div id="message" style="white-space: pre-wrap;"></div>
 	</body>
 </html>
