@@ -19,7 +19,7 @@ The header
 ```
 ## Sample output
 ```
-is used to specified the outputs of the programme to standard out if execution.
+is used to specified the outputs of the programme to standard out if execution is correct.
 
 You can have more than one pair of input/output.
 
