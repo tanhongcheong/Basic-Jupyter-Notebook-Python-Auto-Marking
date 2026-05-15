@@ -133,12 +133,13 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 				{
 					let p = document.createElement("p");
 					div.appendChild(p);
-					p.setAttribute("style","font-weight: bold;");
+					p.setAttribute("style","color:blue;font-weight: bold;");
 					p.textContent = "Results";
 				}
 				{
 					let p = document.createElement("pre");
 					div.appendChild(p);
+					p.setAttribute("style","color:blue;");
 					p.textContent = message;
 				}
 			}
@@ -183,7 +184,6 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 						//console.log(htmlString);
 						const notebook = JSON.parse(e.target.result);
 						result = parseNotebook(notebook);
-						console.log(result);
 						document.getElementById('problem').innerHTML = marked.parse(result.problem);
 						
 						const jsonString = JSON.stringify(result);
