@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 
 <head>
-	
 	<title>Basic Jupyter Notebook Python Auto Marking</title>    
 	<link rel="stylesheet" href="https://pyscript.net/releases/2025.11.1/core.css" />
 	<script type="module" src="https://pyscript.net/releases/2025.11.1/core.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+	
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+	<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+	<!-- and it's easy to individually load additional languages -->
+	<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/python.min.js"></script>
+	
+	
 	<script type="py">
 import js
 import json
@@ -131,7 +137,7 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 				div = document.getElementById("message");
 				div.replaceChildren();//clear all
 				{
-					let p = document.createElement("p");
+					let p = document.createElement("h1");
 					div.appendChild(p);
 					p.setAttribute("style","color:blue;font-weight: bold;");
 					p.textContent = "Results";
@@ -148,7 +154,7 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 				div = document.getElementById("message");
 				div.replaceChildren();//clear all
 				{
-					let p = document.createElement("p");
+					let p = document.createElement("h1");
 					div.appendChild(p);
 					p.setAttribute("style","color:red;font-weight: bold;");
 					p.textContent = "Error";
@@ -190,18 +196,19 @@ js.window.callPython = ffi.create_proxy(my_python_function)
 						mark(jsonString);
 						MathJax.typesetPromise().then(() => {MathJax.typeset();});
 						
+						let codeBlockHTML = `<h1>Your code</h1><pre><code class="language-python">`;
+						codeBlockHTML += result.code;
+						codeBlockHTML += `</pre></code>`;
+						let codeBlock = document.getElementById('code');
+						codeBlock.innerHTML = codeBlockHTML;			
+						hljs.highlightAll();
 					}
 					reader.readAsText(file); 
-					
-					/*MathJax.startup.promise.then(() =>
-					{
-						
-						return MathJax.typesetPromise();
-					}).catch((err) => console.log('Typeset failed: ', err.message));*/
 				}
 			});
 		</script>
 		<div id="problem"></div>
+		<div id="code"></div>
 		<div id="message" style="white-space: pre-wrap;"></div>
 	</body>
 </html>
